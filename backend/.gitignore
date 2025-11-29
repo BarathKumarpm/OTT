@@ -1,7 +1,4 @@
-# Corrected dotenv and Node dependencies for the OTT structure
-
-# Environment Variables (assuming .env is in the root OTT folder)
-.env
-
 # Dependencies
 backend/node_modules/
+# Environment Variables
+backend/.env
