@@ -1,23 +1,23 @@
+// backend/models/User.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    username: {
-      type: String,
-      required: true,
-      unique: true,
+    username: { 
+      type: String, 
+      required: true, 
+      unique: true, 
+      trim: true 
     },
-
-    passwordHash: {
-      type: String,
+    passwordHash: { 
+      type: String, 
       required: true,
     },
-
-    role: {
-      type: String,
-      enum: ["admin"],
-      default: "admin",
-    }
+    role: { 
+      type: String, 
+      enum: ["admin", "staff"], 
+      default: "admin"
+    },
   },
   { timestamps: true }
 );

@@ -1,21 +1,19 @@
 import express from "express";
 import {
-  calculateMonthlyOvertime,
-  getWorkerMonthlyOvertime,
-  getAllWorkersOvertime
+  getWorkerMonthlySummary,
+  recalculateMonthSummaries,
+  getAllWorkersSummaries
 } from "../controllers/overtime.controller.js";
-
-import { authMiddleware } from "../middleware/auth.js";
 
 const router = express.Router();
 
-// POST trigger monthly overtime calculation
-router.post("/calculate", authMiddleware, calculateMonthlyOvertime);
+// All workers summaries using query params
+router.get("/all", getAllWorkersSummaries);
 
-// GET overtime summary for 1 worker
-router.get("/:workerId/:month/:year", authMiddleware, getWorkerMonthlyOvertime);
+// Single worker summary
+router.get("/:workerId/:month/:year", getWorkerMonthlySummary);
 
-// GET all workers summary for a month
-router.get("/all/:month/:year", authMiddleware, getAllWorkersOvertime);
+// Recalculate summaries
+router.post("/recalculate/:month/:year", recalculateMonthSummaries);
 
 export default router;

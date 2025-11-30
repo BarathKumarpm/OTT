@@ -1,32 +1,29 @@
+// backend/models/Worker.js
 import mongoose from "mongoose";
 
 const workerSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
+    name: { 
+      type: String, 
+      required: true, 
+      trim: true 
     },
-
-    employeeId: {
-      type: String,
-      unique: true,
-      sparse: true,
+    employeeId: { 
+      type: String, 
+      unique: true, 
+      sparse: true 
     },
-
-    department: {
-      type: String,
-      default: "General",
+    department: { 
+      type: String, 
+      default: "General" 
     },
-
-    role: {
-      type: String,
-      default: "worker",
+    role: { 
+      type: String, 
+      default: "worker" 
     },
-
-    baseHoursPerDay: {
+    baseHoursPerDay: { 
       type: Number,
-      default: 8,
+      default: 8
     }
   },
   { timestamps: true }
