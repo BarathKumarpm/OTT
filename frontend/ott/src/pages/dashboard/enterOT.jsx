@@ -1,4 +1,3 @@
-// pages/dashboard/enterOT.jsx
 import { useState, useEffect } from 'react';
 import { 
   Clock, 
@@ -20,21 +19,43 @@ export default function EnterOT() {
   // Workers state
   const [workers, setWorkers] = useState([]);
   const [loadingWorkers, setLoadingWorkers] = useState(true);
-  
+
   // Form submission state
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Helper function to get current date in local timezone (YYYY-MM-DD format)
+  const getCurrentDateLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Get current date in user's local timezone
+  const [currentDateISO, setCurrentDateISO] = useState(getCurrentDateLocal());
+
   // Form data
   const [formData, setFormData] = useState({
     workerId: '',
-    date: new Date().toISOString().split('T')[0],
+    date: currentDateISO,
     otStart: '08:00',
     otEnd: '',
     deductLunch: true,
     notes: ''
   });
+
+  // Update current date every minute to ensure it's always current
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newCurrentDate = getCurrentDateLocal();
+      setCurrentDateISO(newCurrentDate);
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Fetch workers on mount
   useEffect(() => {
@@ -64,6 +85,7 @@ export default function EnterOT() {
     setSuccess('');
   };
 
+  // VALIDATION LOGIC WITH CURRENT DATE CHECK
   const validateForm = () => {
     if (!formData.workerId) {
       setError('Please select a worker');
@@ -82,6 +104,7 @@ export default function EnterOT() {
       return false;
     }
 
+    // Validate time format
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (!timeRegex.test(formData.otStart)) {
       setError('Invalid start time format. Use HH:mm (e.g., 08:00)');
@@ -89,6 +112,15 @@ export default function EnterOT() {
     }
     if (!timeRegex.test(formData.otEnd)) {
       setError('Invalid end time format. Use HH:mm (e.g., 17:00)');
+      return false;
+    }
+
+    // Get fresh current date for validation
+    const todayDate = getCurrentDateLocal();
+    
+    // Validate date is not in future
+    if (formData.date > todayDate) {
+      setError(`Date must not be in the future. Today's date is ${todayDate}. Please select today or an earlier date.`);
       return false;
     }
 
@@ -106,34 +138,34 @@ export default function EnterOT() {
 
     const [startHour, startMin] = formData.otStart.split(':').map(Number);
     const [endHour, endMin] = formData.otEnd.split(':').map(Number);
-    
+
     let startMinutes = startHour * 60 + startMin;
     let endMinutes = endHour * 60 + endMin;
-    
+
     // If end time is less than start time, assume it's next day
     if (endMinutes <= startMinutes) {
       endMinutes += 24 * 60;
     }
-    
+
     let totalWorkedMinutes = endMinutes - startMinutes;
-    
+
     // Deduct lunch if enabled
     if (formData.deductLunch) {
       totalWorkedMinutes = Math.max(totalWorkedMinutes - 60, 0);
     }
-    
+
     // Get base hours from selected worker
     const baseHoursMinutes = getBaseHoursMinutes();
-    
+
     // Calculate actual overtime (hours worked beyond base hours)
     const overtimeMinutes = Math.max(totalWorkedMinutes - baseHoursMinutes, 0);
-    
+
     const totalHours = Math.floor(totalWorkedMinutes / 60);
     const totalMins = totalWorkedMinutes % 60;
-    
+
     const otHours = Math.floor(overtimeMinutes / 60);
     const otMins = overtimeMinutes % 60;
-    
+
     return { 
       totalWorked: totalWorkedMinutes,
       totalHours,
@@ -147,7 +179,7 @@ export default function EnterOT() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -177,7 +209,7 @@ export default function EnterOT() {
 
       const worker = workers.find(w => w._id === formData.workerId);
       const workerName = worker ? worker.name : 'Worker';
-      
+
       const paidHours = (data.paidMinutes / 60).toFixed(2);
       const unpaidHours = (data.unpaidMinutes / 60).toFixed(2);
       const remainingHours = (data.remainingPaidMinutesAfter / 60).toFixed(2);
@@ -208,7 +240,7 @@ export default function EnterOT() {
   const handleReset = () => {
     setFormData({
       workerId: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getCurrentDateLocal(),
       otStart: '08:00',
       otEnd: '',
       deductLunch: true,
@@ -224,7 +256,7 @@ export default function EnterOT() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:mt-0 mt-10">
       <div className="max-w-3xl mx-auto">
-        
+
         {/* Header */}
         <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 mb-6">
           <div className="flex items-center gap-3">
@@ -330,10 +362,13 @@ export default function EnterOT() {
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
-                  max={new Date().toISOString().split('T')[0]}
+                  max={currentDateISO}
                   className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition text-sm"
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Current date: {currentDateISO} (must not be in the future)
+              </p>
             </div>
 
             {/* Time In and Time Out - Responsive Grid */}
@@ -524,6 +559,7 @@ export default function EnterOT() {
             <li>• Overtime beyond 72 hours will be tracked as unpaid</li>
             <li>• If end time is before start time, it will be counted as next day</li>
             <li>• Lunch break (1 hour) is automatically deducted by default</li>
+            <li>• Date must not be in the future (current date: {currentDateISO})</li>
           </ul>
         </div>
       </div>
